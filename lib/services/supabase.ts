@@ -33,7 +33,7 @@ export type Database = {
           album: string
           album_id?: string
           duration: number
-          cover_url?: string
+          coverUrl?: string
           spotify_url?: string
           youtube_url?: string
           preview_url?: string

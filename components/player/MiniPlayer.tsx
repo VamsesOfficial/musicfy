@@ -78,7 +78,7 @@ export default function MiniPlayer() {
         <div className="flex items-center gap-4">
           {/* Album art */}
           <motion.img
-            src={currentTrack.cover_url || '/placeholder-album.png'}
+            src={currentTrack.coverUrl || '/placeholder-album.png'}
             alt={currentTrack.album}
             className="w-12 h-12 rounded-lg object-cover shadow-lg"
             layoutId="albumArt"

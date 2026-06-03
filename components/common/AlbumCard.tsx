@@ -8,7 +8,7 @@ interface AlbumCardProps {
   id: string;
   title: string;
   artist: string;
-  cover_url?: string;
+  coverUrl?: string;
   releaseDate?: string;
   totalTracks?: number;
   onPlay?: () => void;
@@ -18,7 +18,7 @@ export function AlbumCard({
   id,
   title,
   artist,
-  cover_url,
+  coverUrl,
   releaseDate,
   totalTracks = 0,
   onPlay
@@ -35,9 +35,9 @@ export function AlbumCard({
       className="glass-card rounded-xl overflow-hidden group cursor-pointer hover:shadow-xl transition-all"
     >
       <div className="relative overflow-hidden aspect-square bg-gradient-to-br from-accent/20 to-green-400/20 flex items-center justify-center">
-        {cover_url ? (
+        {coverUrl ? (
           <motion.img
-            src={cover_url}
+            src={coverUrl}
             alt={title}
             className="w-full h-full object-cover"
             animate={{ scale: isHovered ? 1.05 : 1 }}

@@ -170,7 +170,7 @@ export default function SearchPage() {
                       className="glass-card p-4 rounded-lg flex items-center gap-4 group cursor-pointer hover:shadow-xl transition-all"
                     >
                       <img
-                        src={track.cover_url || '/placeholder-album.png'}
+                        src={track.coverUrl || '/placeholder-album.png'}
                         alt={track.title}
                         className="w-14 h-14 rounded-lg object-cover shadow-md"
                       />
@@ -250,7 +250,7 @@ export default function SearchPage() {
                     >
                       <div className="relative overflow-hidden aspect-square">
                         <img
-                          src={album.cover_url || '/placeholder-album.png'}
+                          src={album.coverUrl || '/placeholder-album.png'}
                           alt={album.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />

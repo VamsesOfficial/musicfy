@@ -10,7 +10,7 @@ interface LibraryTrack {
   id: string;
   title: string;
   artist: string;
-  cover_url?: string;
+  coverUrl?: string;
   duration: number;
 }
 
@@ -161,7 +161,7 @@ export default function LibraryPage() {
                   className="glass-card p-4 rounded-lg flex items-center gap-4 group cursor-pointer hover:shadow-xl transition-all"
                 >
                   <img
-                    src={track.cover_url || '/placeholder-album.png'}
+                    src={track.coverUrl || '/placeholder-album.png'}
                     alt={track.title}
                     className="w-14 h-14 rounded-lg object-cover shadow-md"
                   />

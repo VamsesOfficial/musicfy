@@ -32,9 +32,9 @@ export function TrackCard({
       }`}
     >
       <div className="relative overflow-hidden aspect-square bg-gradient-to-br from-accent/20 to-green-400/20">
-        {track.cover_url ? (
+        {track.coverUrl ? (
           <motion.img
-            src={track.cover_url}
+            src={track.coverUrl}
             alt={track.title}
             className="w-full h-full object-cover"
             animate={{ scale: isHovered ? 1.05 : 1 }}

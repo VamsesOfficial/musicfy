@@ -79,7 +79,7 @@ export function FullPlayer({ isOpen, onClose }: FullPlayerProps) {
               whileHover={{ scale: 1.02 }}
             >
               <motion.img
-                src={currentTrack.cover_url || '/placeholder-album.png'}
+                src={currentTrack.coverUrl || '/placeholder-album.png'}
                 alt={currentTrack.album}
                 className="w-full h-full object-cover"
                 animate={{ scale: isPlaying ? 1.05 : 1 }}
