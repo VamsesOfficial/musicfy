@@ -58,11 +58,16 @@ export default function LibraryPage() {
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
+ const itemVariants: import('framer-motion').Variants = {
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
+      transition: {
+        type: 'spring',
+        damping: 12,
+        stiffness: 100,
+      },
     },
   };
 
