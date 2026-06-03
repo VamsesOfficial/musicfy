@@ -1,125 +1,250 @@
-import { create } from 'zustand'
-import { PlayerState, Track } from '@/lib/types'
+'use client';
 
-interface PlayerStore extends PlayerState {
-  setTrack: (track: Track | null) => void
-  setQueue: (queue: Track[]) => void
-  setPlaying: (playing: boolean) => void
-  setProgress: (progress: number) => void
-  setVolume: (volume: number) => void
-  setRepeatMode: (mode: 'off' | 'one' | 'all') => void
-  setShuffle: (shuffle: boolean) => void
-  setBuffering: (buffering: boolean) => void
-  nextTrack: () => void
-  previousTrack: () => void
-  playTrack: (track: Track, queue?: Track[]) => void
-  pauseTrack: () => void
-  togglePlayPause: () => void
-  clearQueue: () => void
-  removeFromQueue: (index: number) => void
-  moveQueueTrack: (from: number, to: number) => void
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, Heart, Share2, MoreVertical, Mic2 } from 'lucide-react';
+import { usePlayerStore } from '@/lib/stores/playerStore';
+import { formatDuration } from '@/lib/utils/helpers';
+
+interface FullPlayerProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const usePlayerStore = create<PlayerStore>((set, get) => ({
-  isPlaying: false,
-  currentTrack: null,
-  queue: [],
-  currentIndex: 0,
-  progress: 0,
-  duration: 0,
-  volume: 0.8,
-  repeatMode: 'off',
-  shuffle: false,
-  buffering: false,
+export function FullPlayer({ isOpen, onClose }: FullPlayerProps) {
+  const {
+    currentTrack,
+    queue,
+    isPlaying,
+    currentTime,
+    duration,
+    togglePlayPause,
+    nextTrack,
+    previousTrack
+  } = usePlayerStore();
 
-  setTrack: (track) => set({ currentTrack: track }),
-  setQueue: (queue) => set({ queue }),
-  setPlaying: (playing) => set({ isPlaying: playing }),
-  setProgress: (progress) => set({ progress }),
-  setVolume: (volume) => set({ volume: Math.max(0, Math.min(1, volume)) }),
-  setRepeatMode: (mode) => set({ repeatMode: mode }),
-  setShuffle: (shuffle) => set({ shuffle }),
-  setBuffering: (buffering) => set({ buffering }),
+  const [displayDuration, setDisplayDuration] = useState(0);
+  const [lyrics, setLyrics] = useState<string[]>([]);
+  const [showLyrics, setShowLyrics] = useState(true);
 
-  nextTrack: () => {
-    const { currentIndex, queue, repeatMode } = get()
-    if (queue.length === 0) return
-
-    let nextIndex = currentIndex + 1
-    if (nextIndex >= queue.length) {
-      if (repeatMode === 'all') {
-        nextIndex = 0
-      } else {
-        return
-      }
+  useEffect(() => {
+    if (currentTrack?.duration) {
+      setDisplayDuration(currentTrack.duration);
     }
+  }, [currentTrack]);
 
-    set({
-      currentIndex: nextIndex,
-      currentTrack: queue[nextIndex],
-      progress: 0,
-    })
-  },
+  if (!currentTrack || !isOpen) {
+    return null;
+  }
 
-  previousTrack: () => {
-    const { currentIndex, queue } = get()
-    if (queue.length === 0) return
+  const progressPercent = displayDuration ? (currentTime / displayDuration) * 100 : 0;
 
-    const prevIndex = Math.max(0, currentIndex - 1)
-    set({
-      currentIndex: prevIndex,
-      currentTrack: queue[prevIndex],
-      progress: 0,
-    })
-  },
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: '100%' }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="fixed inset-0 bg-gradient-to-b from-background via-secondary to-tertiary z-50 overflow-hidden"
+      >
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 backdrop-blur-md bg-white/5">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <ChevronDown size={28} />
+            </motion.button>
 
-  playTrack: (track, queue) => {
-    set({
-      currentTrack: track,
-      queue: queue || [track],
-      currentIndex: queue ? queue.indexOf(track) : 0,
-      isPlaying: true,
-      progress: 0,
-    })
-  },
+            <h2 className="text-sm font-semibold text-text-secondary tracking-wider">NOW PLAYING</h2>
 
-  pauseTrack: () => set({ isPlaying: false }),
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <MoreVertical size={24} />
+            </motion.button>
+          </div>
 
-  togglePlayPause: () => {
-    const { isPlaying } = get()
-    set({ isPlaying: !isPlaying })
-  },
+          {/* Album Art Section - Large */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+            <motion.div
+              layoutId="albumArt"
+              className="w-64 h-64 md:w-72 md:h-72 rounded-2xl overflow-hidden shadow-2xl"
+              whileHover={{ scale: 1.02 }}
+            >
+              <motion.img
+                src={currentTrack.coverUrl || '/placeholder-album.png'}
+                alt={currentTrack.album}
+                className="w-full h-full object-cover"
+                animate={{ scale: isPlaying ? 1.05 : 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            </motion.div>
 
-  clearQueue: () => set({
-    queue: [],
-    currentIndex: 0,
-    currentTrack: null,
-    isPlaying: false,
-  }),
+            {/* Track Info */}
+            <motion.div
+              className="mt-12 text-center max-w-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h1 className="text-3xl md:text-4xl font-bold text-text-primary mb-2 line-clamp-2">
+                {currentTrack.title}
+              </h1>
+              <p className="text-lg text-text-secondary mb-1">{currentTrack.artist}</p>
+              <p className="text-sm text-text-secondary/70">{currentTrack.album}</p>
+            </motion.div>
 
-  removeFromQueue: (index) => {
-    const { queue, currentIndex } = get()
-    const newQueue = queue.filter((_, i) => i !== index)
-    let newIndex = currentIndex
+            {/* Actions */}
+            <motion.div
+              className="flex items-center gap-6 mt-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-3 rounded-full hover:bg-accent/20 transition-colors"
+              >
+                <Heart size={24} />
+              </motion.button>
 
-    if (index < currentIndex) {
-      newIndex = currentIndex - 1
-    } else if (index === currentIndex) {
-      newIndex = Math.min(newIndex, newQueue.length - 1)
-    }
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-3 rounded-full hover:bg-accent/20 transition-colors"
+              >
+                <Share2 size={24} />
+              </motion.button>
 
-    set({
-      queue: newQueue,
-      currentIndex: newIndex,
-      currentTrack: newIndex >= 0 ? newQueue[newIndex] : null,
-    })
-  },
+              {showLyrics && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowLyrics(!showLyrics)}
+                  className="p-3 rounded-full bg-accent/20 text-accent transition-colors"
+                >
+                  <Mic2 size={24} />
+                </motion.button>
+              )}
+            </motion.div>
+          </div>
 
-  moveQueueTrack: (from, to) => {
-    const { queue } = get()
-    const newQueue = [...queue]
-    const [removed] = newQueue.splice(from, 1)
-    newQueue.splice(to, 0, removed)
-    set({ queue: newQueue })
-  },
-}))
+          {/* Lyrics Section */}
+          {showLyrics && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="px-6 py-4 h-32 overflow-y-auto glass-card mx-6 mb-4 rounded-xl"
+            >
+              <p className="text-center text-sm text-text-secondary italic">
+                Lyrics not available for this track
+              </p>
+            </motion.div>
+          )}
+
+          {/* Controls Section */}
+          <div className="px-6 pb-8 space-y-6">
+            {/* Progress */}
+            <div>
+              <motion.div
+                className="flex-1 h-2 bg-tertiary rounded-full overflow-hidden cursor-pointer mb-2"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const percent = (e.clientX - rect.left) / rect.width;
+                  const newTime = percent * displayDuration;
+                  usePlayerStore.setState({ currentTime: newTime });
+                }}
+              >
+                <motion.div
+                  className="h-full bg-gradient-to-r from-accent to-green-400"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </motion.div>
+              <div className="flex justify-between text-xs text-text-secondary">
+                <span>{formatDuration(currentTime)}</span>
+                <span>{formatDuration(displayDuration)}</span>
+              </div>
+            </div>
+
+            {/* Playback Controls */}
+            <div className="flex items-center justify-center gap-8">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={previousTrack}
+                className="p-3 hover:bg-tertiary rounded-full transition-colors"
+              >
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                </svg>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={togglePlayPause}
+                className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-accent to-green-400 rounded-full shadow-2xl hover:shadow-3xl transition-all"
+              >
+                {isPlaying ? (
+                  <svg className="w-8 h-8 text-background" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="4" width="4" height="16" />
+                    <rect x="14" y="4" width="4" height="16" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-background ml-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={nextTrack}
+                className="p-3 hover:bg-tertiary rounded-full transition-colors"
+              >
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 18h2V6h-2zm-11-7l8.5-6v12z" />
+                </svg>
+              </motion.button>
+            </div>
+
+            {/* Queue Preview */}
+            {queue.length > 1 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass-card p-4 rounded-xl"
+              >
+                <p className="text-xs font-semibold text-text-secondary mb-3 tracking-wider">UP NEXT</p>
+                <div className="space-y-2">
+                  {queue.slice(1, 4).map((track, idx) => (
+                    <motion.div
+                      key={idx}
+                      className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                      whileHover={{ x: 4 }}
+                    >
+                      <span className="text-xs text-text-secondary w-6">{idx + 2}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate font-medium">{track.title}</p>
+                        <p className="text-xs text-text-secondary truncate">{track.artist}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
