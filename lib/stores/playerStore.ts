@@ -4,11 +4,13 @@ import { PlayerState, Track } from '@/lib/types'
 interface PlayerStore extends PlayerState {
   currentTime: number
   isShuffle: boolean
+  playbackSpeed: number
   setTrack: (track: Track | null) => void
   setQueue: (queue: Track[]) => void
   setPlaying: (playing: boolean) => void
   setProgress: (progress: number) => void
   setCurrentTime: (time: number) => void
+  setPlaybackSpeed: (speed: number) => void
   setVolume: (volume: number) => void
   setRepeatMode: (mode: 'off' | 'one' | 'all') => void
   setShuffle: (shuffle: boolean) => void
@@ -33,6 +35,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   progress: 0,
   duration: 0,
   currentTime: 0,
+  playbackSpeed: 1,
   volume: 0.8,
   isMuted: false,
   repeatMode: 'off',
@@ -45,6 +48,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   setPlaying: (playing) => set({ isPlaying: playing }),
   setProgress: (progress) => set({ progress }),
   setCurrentTime: (time) => set({ currentTime: time }),
+  setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
   setVolume: (volume) => set({ volume: Math.max(0, Math.min(1, volume)) }),
   setRepeatMode: (mode) => set({ repeatMode: mode }),
   setShuffle: (shuffle) => set({ shuffle, isShuffle: shuffle }),
