@@ -5,6 +5,7 @@ interface PlayerStore extends PlayerState {
   currentTime: number
   isShuffle: boolean
   playbackSpeed: number
+  currentTrackIndex: number
   setTrack: (track: Track | null) => void
   setQueue: (queue: Track[]) => void
   setPlaying: (playing: boolean) => void
@@ -36,6 +37,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   duration: 0,
   currentTime: 0,
   playbackSpeed: 1,
+  currentTrackIndex: 0,
   volume: 0.8,
   isMuted: false,
   repeatMode: 'off',
@@ -78,6 +80,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
     set({
       currentIndex: nextIndex,
+      currentTrackIndex: nextIndex,
       currentTrack: queue[nextIndex],
       progress: 0,
     })
@@ -90,16 +93,19 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const prevIndex = Math.max(0, currentIndex - 1)
     set({
       currentIndex: prevIndex,
+      currentTrackIndex: prevIndex,
       currentTrack: queue[prevIndex],
       progress: 0,
     })
   },
 
   playTrack: (track, queue) => {
+    const idx = queue ? queue.indexOf(track) : 0
     set({
       currentTrack: track,
       queue: queue || [track],
-      currentIndex: queue ? queue.indexOf(track) : 0,
+      currentIndex: idx,
+      currentTrackIndex: idx,
       isPlaying: true,
       progress: 0,
     })
