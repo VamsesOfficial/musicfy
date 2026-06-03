@@ -2,255 +2,243 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, PlayCircle, Heart, MoreVertical } from 'lucide-react';
+import { Heart, Music, Play, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import MiniPlayer from '@/components/player/MiniPlayer';
 
-const FEATURED_PLAYLISTS = [
-  { id: '1', title: 'Summer Vibes', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400', description: 'Feel the summer energy' },
-  { id: '2', title: 'Focus Beats', cover: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=400', description: 'Deep concentration mode' },
-  { id: '3', title: 'Late Night', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400', description: 'Chill evening playlist' },
-  { id: '4', title: 'Workout Mix', cover: 'https://images.unsplash.com/photo-1498038432885-96d35ce61db0?w=400', description: 'Get pumped up' },
-];
+interface LibraryTrack {
+  id: string;
+  title: string;
+  artist: string;
+  cover_url?: string;
+  duration: number;
+}
 
-const TRENDING_TRACKS = Array.from({ length: 8 }, (_, i) => ({
-  id: `track-${i}`,
-  title: `Track Title ${i + 1}`,
-  artist: `Artist Name ${i + 1}`,
-  cover: `https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200&q=80`
-}));
+export default function LibraryPage() {
+  const [likedTracks, setLikedTracks] = useState<LibraryTrack[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'liked' | 'playlists'>('liked');
 
-export default function Home() {
+  useEffect(() => {
+    loadLibrary();
+  }, []);
+
+  const loadLibrary = async () => {
+    try {
+      setLoading(true);
+      const [libRes, playlistRes] = await Promise.all([
+        fetch('/api/library'),
+        fetch('/api/playlists')
+      ]);
+
+      const libData = await libRes.json();
+      const playlistData = await playlistRes.json();
+
+      if (libData.library?.liked_track_ids) {
+        // Load liked tracks from IDs
+        setLikedTracks([]);
+      }
+
+      setPlaylists(playlistData.playlists || []);
+    } catch (error) {
+      console.error('Failed to load library:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.2,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        type: 'spring' as const,
-        damping: 12,
-        stiffness: 100,
-      },
     },
   };
 
   return (
-    <div className="min-h-screen bg-card text-foreground">
-      {/* Header Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-30 glass border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-black tracking-tighter text-gradient">
-              Musicify
-            </h1>
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-                Home
-              </Link>
-              <Link href="/search" className="text-sm font-medium hover:text-primary transition-colors">
-                Search
-              </Link>
-              <Link href="/library" className="text-sm font-medium hover:text-primary transition-colors">
-                Library
-              </Link>
-            </nav>
-          </div>
-
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-8">
-            <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search songs, artists, playlists..."
-                className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-full text-sm placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-              />
+    <div className="min-h-screen bg-background text-text-primary pb-32">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-30 glass-card backdrop-blur-xl border-b">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-black text-gradient">Your Library</h1>
+              <p className="text-sm text-text-secondary mt-1">Your saved music and playlists</p>
             </div>
-          </div>
-
-          {/* Auth Buttons */}
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-sm font-medium hover:text-primary transition-colors">
-              Sign In
-            </button>
-            <button className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-all">
-              Sign Up
-            </button>
+            <Link href="/" className="px-4 py-2 text-sm font-medium hover:text-accent transition-colors">
+              Back to Home
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="pt-24 pb-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
-          <motion.section
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-16"
+      <main className="max-w-6xl mx-auto px-6 pt-28">
+        {/* Tabs */}
+        <div className="flex gap-4 mb-8 border-b border-border">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setActiveTab('liked')}
+            className={`pb-4 px-2 font-semibold transition-colors relative ${
+              activeTab === 'liked'
+                ? 'text-accent'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
           >
-            <div className="glass-lg rounded-2xl p-12 overflow-hidden relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent" />
-              <div className="relative z-10">
-                <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-5xl font-black mb-4 text-gradient"
-                >
-                  Welcome Back
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-xl text-muted max-w-2xl"
-                >
-                  Discover new music, create playlists, and enjoy seamless streaming with Musicify.
-                </motion.p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-primary to-green-400 rounded-full font-semibold text-primary-foreground hover:shadow-lg transition-all mt-8"
-                >
-                  <PlayCircle size={20} />
-                  Start Playing
-                </motion.button>
-              </div>
-            </div>
-          </motion.section>
+            Liked Songs
+            {activeTab === 'liked' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-1 bg-accent rounded-t"
+              />
+            )}
+          </motion.button>
 
-          {/* Featured Playlists */}
-          <motion.section
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setActiveTab('playlists')}
+            className={`pb-4 px-2 font-semibold transition-colors relative ${
+              activeTab === 'playlists'
+                ? 'text-accent'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Playlists
+            {activeTab === 'playlists' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-1 bg-accent rounded-t"
+              />
+            )}
+          </motion.button>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="glass-card p-4 rounded-lg animate-pulse">
+                <div className="h-40 bg-tertiary rounded-lg mb-4" />
+                <div className="h-4 bg-tertiary rounded mb-2" />
+                <div className="h-3 bg-tertiary rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : activeTab === 'liked' ? (
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="mb-16"
+            className="space-y-3"
           >
-            <h3 className="text-2xl font-black mb-6 text-foreground">Featured Playlists</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {FEATURED_PLAYLISTS.map((playlist) => (
+            {likedTracks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 bg-tertiary rounded-full flex items-center justify-center mb-4">
+                  <Heart size={32} className="text-text-secondary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No liked songs yet</h3>
+                <p className="text-text-secondary">Start liking songs to see them here</p>
+              </div>
+            ) : (
+              likedTracks.map((track) => (
+                <motion.div
+                  key={track.id}
+                  variants={itemVariants}
+                  whileHover={{ x: 4 }}
+                  className="glass-card p-4 rounded-lg flex items-center gap-4 group cursor-pointer hover:shadow-xl transition-all"
+                >
+                  <img
+                    src={track.cover_url || '/placeholder-album.png'}
+                    alt={track.title}
+                    className="w-14 h-14 rounded-lg object-cover shadow-md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-text-primary truncate">{track.title}</p>
+                    <p className="text-sm text-text-secondary truncate">{track.artist}</p>
+                  </div>
+                  <span className="text-xs text-text-secondary">{Math.floor(track.duration / 60)}:00</span>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    className="p-2 hover:bg-accent/20 rounded-lg text-text-secondary hover:text-accent transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Play size={20} fill="currentColor" />
+                  </motion.button>
+                  <button className="p-2 hover:bg-tertiary rounded-lg transition-colors">
+                    <MoreVertical size={20} className="text-text-secondary" />
+                  </button>
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {playlists.length === 0 ? (
+              <div className="flex flex-col items-center justify-center col-span-full py-16 text-center">
+                <div className="w-16 h-16 bg-tertiary rounded-full flex items-center justify-center mb-4">
+                  <Music size={32} className="text-text-secondary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No playlists yet</h3>
+                <p className="text-text-secondary">Create your first playlist to get started</p>
+              </div>
+            ) : (
+              playlists.map((playlist) => (
                 <motion.div
                   key={playlist.id}
                   variants={itemVariants}
                   whileHover={{ y: -8 }}
-                  className="glass rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-premium"
+                  className="glass-card rounded-xl overflow-hidden group cursor-pointer hover:shadow-xl transition-all"
                 >
-                  <div className="relative overflow-hidden aspect-square">
-                    <img
-                      src={playlist.cover}
-                      alt={playlist.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all" />
+                  <div className="relative overflow-hidden aspect-square bg-gradient-to-br from-accent/20 to-green-400/20 flex items-center justify-center">
+                    {playlist.image_url ? (
+                      <img
+                        src={playlist.image_url}
+                        alt={playlist.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <Music size={64} className="text-accent/50" />
+                    )}
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
-                      className="absolute bottom-4 right-4 w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute bottom-4 right-4 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <PlayCircle size={24} className="text-primary-foreground fill-primary-foreground" />
+                      <Play size={24} className="text-background fill-background ml-0.5" />
                     </motion.button>
                   </div>
                   <div className="p-4">
-                    <h4 className="font-semibold text-foreground truncate">{playlist.title}</h4>
-                    <p className="text-sm text-muted truncate">{playlist.description}</p>
+                    <h4 className="font-semibold text-text-primary truncate mb-1">{playlist.title}</h4>
+                    {playlist.description && (
+                      <p className="text-sm text-text-secondary truncate">{playlist.description}</p>
+                    )}
+                    <p className="text-xs text-text-secondary/50 mt-2">Playlist • {playlist.is_public ? 'Public' : 'Private'}</p>
                   </div>
                 </motion.div>
-              ))}
-            </div>
-          </motion.section>
-
-          {/* Trending Now */}
-          <motion.section
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="mb-16"
-          >
-            <h3 className="text-2xl font-black mb-6 text-foreground">Trending Now</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {TRENDING_TRACKS.map((track) => (
-                <motion.div
-                  key={track.id}
-                  variants={itemVariants}
-                  whileHover={{ y: -4 }}
-                  className="glass p-4 rounded-lg group cursor-pointer transition-all hover:shadow-premium"
-                >
-                  <div className="flex items-start gap-4 mb-3">
-                    <img
-                      src={track.cover}
-                      alt={track.title}
-                      className="w-16 h-16 rounded-lg object-cover shadow-lg group-hover:shadow-glow transition-all"
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-primary transition-colors ml-auto"
-                    >
-                      <PlayCircle size={24} className="fill-current" />
-                    </motion.button>
-                  </div>
-                  <h4 className="font-semibold text-foreground truncate text-sm">{track.title}</h4>
-                  <p className="text-xs text-muted truncate">{track.artist}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-
-          {/* Recently Played */}
-          <motion.section
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <h3 className="text-2xl font-black mb-6 text-foreground">Recently Played</h3>
-            <div className="space-y-3">
-              {Array.from({ length: 6 }, (_, i) => (
-                <motion.div
-                  key={i}
-                  variants={itemVariants}
-                  whileHover={{ x: 4 }}
-                  className="glass p-4 rounded-lg flex items-center gap-4 group cursor-pointer hover:shadow-premium transition-all"
-                >
-                  <img
-                    src={TRENDING_TRACKS[i % TRENDING_TRACKS.length].cover}
-                    alt="Track"
-                    className="w-14 h-14 rounded-lg object-cover shadow-lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">Track Title {i + 1}</p>
-                    <p className="text-sm text-muted truncate">Artist Name {i + 1}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      <Heart size={20} />
-                    </motion.button>
-                    <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                      <MoreVertical size={20} className="text-muted-foreground" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-        </div>
+              ))
+            )}
+          </motion.div>
+        )}
       </main>
 
-      {/* Mini Plyer */}
+      {/* Mini Player */}
       <MiniPlayer />
     </div>
   );
