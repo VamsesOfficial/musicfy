@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Heart, Share2, MoreVertical, Mic2 } from 'lucide-react';
 import { usePlayerStore } from '@/lib/stores/playerStore';
-import { formatTime } from '@/lib/utils/helpers';
+import { formatDuration } from '@/lib/utils/helpers';
 
 interface FullPlayerProps {
   isOpen: boolean;
@@ -169,8 +169,8 @@ export function FullPlayer({ isOpen, onClose }: FullPlayerProps) {
                 />
               </motion.div>
               <div className="flex justify-between text-xs text-text-secondary">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(displayDuration)}</span>
+                <span>{formatDuration(currentTime)}</span>
+                <span>{formatDuration(displayDuration)}</span>
               </div>
             </div>
 
