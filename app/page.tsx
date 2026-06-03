@@ -250,7 +250,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Mini Player */}
+      {/* Mini Plyer */}
       <MiniPlayer />
     </div>
   );
