@@ -65,7 +65,7 @@ export function useAudioPlayer() {
 
   // Handle play/pause sync
   useEffect(() => {
-    if (isPlaying && currentTrack?.youtube_video_id) {
+    if (isPlaying && currentTrack?.youtubeUrl) {
       // For YouTube streams - would need embedded player or API
       audioEngine.resume();
     } else if (!isPlaying) {
